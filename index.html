@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diversification alimentaire</title>
+<!-- Page autonome. Voir le guide de configuration Firebase dans la conversation. Sans configuration, elle fonctionne en mode local. -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3ef;--surf:#fff;--ink:#1d2b27;--mute:#5d6f69;--line:#d3ddd8;--acc:#2c7a58;--accink:#fff;--warn:#b5365a;--ok:#e9f4ee;--bad:#fbe8ee;--mid:#fff3d6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13201c;--surf:#1b2c27;--ink:#e6f0ec;--mute:#93a8a0;--line:#2f453e;--acc:#5cc496;--accink:#0f1b17;--warn:#f08aa8;--ok:#1f3a2f;--bad:#3d2230;--mid:#3b3520}}
+:root[data-theme="dark"]{--bg:#13201c;--surf:#1b2c27;--ink:#e6f0ec;--mute:#93a8a0;--line:#2f453e;--acc:#5cc496;--accink:#0f1b17;--warn:#f08aa8;--ok:#1f3a2f;--bad:#3d2230;--mid:#3b3520;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:28px;font-weight:800;margin:4px 0 2px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 18px}
+.stats{display:flex;gap:8px;margin-bottom:16px}
+.stat{flex:1;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:24px;font-weight:800}
+.stat span{font-size:13px;color:var(--mute)}
+form{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;grid-template-columns:1fr 1fr}
+form .full{grid-column:1/-1}
+label{display:grid;gap:4px;font-size:13px;color:var(--mute)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+textarea{resize:vertical;min-height:60px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surf);color:var(--ink);padding:9px 14px}
+button.primary{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+.tools{display:flex;gap:8px;margin:18px 0 10px}
+.tools input{flex:2}.tools select{flex:1}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+li{background:var(--surf);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px}
+li.r-aucune{border-left-color:var(--acc)}li.r-legere{border-left-color:#e0a82e}li.r-surveiller{border-left-color:var(--warn)}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.name{font-weight:800;font-size:18px}
+.date{color:var(--mute);font-size:13px;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.tag{font-size:13px;padding:2px 9px;border-radius:99px;background:var(--ok)}
+.tag.w{background:var(--mid)}.tag.b{background:var(--bad)}
+.note{margin:8px 0 0;color:var(--mute);font-size:14px}
+.act{display:flex;gap:8px;margin-top:10px}
+.act button{padding:5px 10px;font-size:13px}
+.empty{text-align:center;color:var(--mute);padding:28px 8px;border:1px dashed var(--line);border-radius:12px}
+.plan{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+.plan summary{cursor:pointer;font-weight:800;font-size:18px}
+.plan h3{font-size:15px;margin:16px 0 2px}
+.plan .when{color:var(--mute);font-size:13px;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;font-size:14px;border-radius:99px}
+.chip.done{background:var(--ok);border-color:var(--acc);color:var(--ink)}
+.avoid{margin:8px 0 0;padding-left:18px;display:block;list-style:disc;font-size:14px}
+.avoid li{background:none;border:0;padding:2px 0;border-radius:0}
+.plan .small{font-size:13px;color:var(--mute)}
+.addrow{display:flex;gap:6px;margin-top:8px}.addrow input{flex:1}.chip.edit{border-style:dashed}
+</style>
+</head>
+<body>
+<main>
+<h1>Diversification alimentaire</h1>
+<p class="sub">Un aliment à la fois, quelques jours d’écart : note la date et la réaction.</p>
+
+<p class="sub" id="sync" role="status"></p>
+<button id="imp" hidden style="margin-bottom:12px"></button>
+<button id="shareLink" hidden style="margin-bottom:12px">Copier le lien de partage</button>
+<div class="stats">
+<div class="stat"><b id="sTotal">0</b><span>aliments introduits</span></div>
+<div class="stat"><b id="sLike">0</b><span>aimés</span></div>
+<div class="stat"><b id="sWatch">0</b><span>à surveiller</span></div>
+</div>
+
+<details class="plan" open>
+<summary>Aliments à introduire</summary>
+<p class="small">Repères de Santé publique France (PNNS, 2021) : début entre 4 et 6 mois révolus, après avis d’un professionnel de santé. Tous les groupes peuvent être introduits dès le début, sans ordre imposé, un aliment à la fois. Touche un aliment pour l’ajouter à ton suivi.</p>
+<label>Date de naissance de bébé (pour calculer les dates)<input id="birth" type="date"></label>
+<div style="display:flex;gap:8px;margin:10px 0"><button type="button" id="editPlan">Modifier les listes</button></div>
+<div id="planBody"></div>
+</details>
+<form id="f">
+<label class="full">Aliment<input id="name" required placeholder="Carotte, poire, œuf…"></label>
+<label>Date d’introduction<input id="date" type="date" required></label>
+<label>Forme<select id="form"><option>Purée lisse</option><option>Purée texturée</option><option>Morceaux</option><option>Mouillettes</option><option>Autre</option></select></label>
+<label>Réaction<select id="react"><option value="aucune">Aucune</option><option value="legere">Légère (rougeurs, selles…)</option><option value="surveiller">À surveiller</option></select></label>
+<label>Appréciation<select id="like"><option value="aime">Aime</option><option value="moyen">Moyen</option><option value="refuse">Refuse</option></select></label>
+<label class="full">Notes<textarea id="note" placeholder="Quantité, délai de la réaction, à retenter…"></textarea></label>
+<button class="primary full" id="submit">Ajouter l’aliment</button>
+</form>
+
+<div class="tools">
+<input id="q" type="search" placeholder="Rechercher un aliment" aria-label="Rechercher">
+<select id="flt" aria-label="Filtrer"><option value="">Tous</option><option value="aucune">Sans réaction</option><option value="legere">Réaction légère</option><option value="surveiller">À surveiller</option><option value="retenter">À retenter</option></select>
+</div>
+<ul id="list"></ul>
+</main>
+<script>
+/* ============ CONFIGURATION FIREBASE : colle ici ton firebaseConfig ============ */
+const FIREBASE_CONFIG={apiKey:"AIzaSyB0tVSPvA9H393UwhpIvmLMEcI0OaKwjBY",authDomain:"diversification-d9a77.firebaseapp.com",projectId:"diversification-d9a77",storageBucket:"diversification-d9a77.firebasestorage.app",messagingSenderId:"157678196630",appId:"1:157678196630:web:9c624ee8f896c275356fb7"};
+/* ================================================================================ */
+(function(){
+ if(!FIREBASE_CONFIG.projectId)return;
+ const B="https://www.gstatic.com/firebasejs/12.12.0/";
+ function getCode(){
+  const m=location.hash.match(/c=([a-z0-9]{12,})/);let c=m?m[1]:null;
+  try{if(c)localStorage.setItem("diversification:code",c);else c=localStorage.getItem("diversification:code")}catch(e){}
+  if(!c){c=Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>"abcdefghijklmnopqrstuvwxyz0123456789"[b%36]).join("");try{localStorage.setItem("diversification:code",c)}catch(e){}}
+  if(!/c=/.test(location.hash))history.replaceState(null,"","#c="+c);
+  return c;
+ }
+ window.claude={use:async n=>{
+  if(n!=="db")return null;
+  const [A,Fs]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js")]);
+  const fs=Fs.getFirestore(A.initializeApp(FIREBASE_CONFIG)),code=getCode();
+  const wd=ref=>({onSnapshot:(ok,ko)=>Fs.onSnapshot(ref,s=>ok({exists:s.exists(),id:s.id,data:()=>s.data()}),ko),set:d=>Fs.setDoc(ref,d),update:p=>Fs.updateDoc(ref,p),delete:()=>Fs.deleteDoc(ref)});
+  return{
+   collection:name=>{const c=Fs.collection(fs,"familles",code,name);return{add:d=>Fs.addDoc(c,d),doc:id=>wd(Fs.doc(c,id)),onSnapshot:(ok,ko)=>Fs.onSnapshot(c,s=>ok({docs:s.docs.map(d=>({id:d.id,data:()=>d.data()}))}),ko)}},
+   doc:path=>{const [col,id]=path.split("/");return wd(Fs.doc(fs,"familles",code,col,id))}
+  };
+ }};
+})();
+</script>
+<script>
+const KEY="diversification:v1";
+let items=[],col=null,editId=null,localItems=[];
+const $=id=>document.getElementById(id);
+const R={aucune:"Aucune réaction",legere:"Réaction légère",surveiller:"À surveiller"};
+const L={aime:"😋 Aime",moyen:"😐 Moyen",refuse:"😖 Refuse"};
+$("date").valueAsDate=new Date();
+function loadLocal(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")||[]}catch(e){return[]}}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+async function add(o){if(col)await col.add(o);else{items.push({id:Date.now().toString(36),...o});saveLocal();render()}}
+async function upd(id,p){if(col)await col.doc(id).update(p);else{Object.assign(items.find(x=>x.id===id),p);saveLocal();render()}}
+async function del(id){if(col)await col.doc(id).delete();else{items=items.filter(x=>x.id!==id);saveLocal();render()}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function fmt(d){try{return new Date(d+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}catch(e){return d}}
+function render(){
+ $("sTotal").textContent=items.length;
+ $("sLike").textContent=items.filter(i=>i.like==="aime").length;
+ $("sWatch").textContent=items.filter(i=>i.react==="surveiller").length;
+ const q=$("q").value.trim().toLowerCase(),f=$("flt").value;
+ const rows=items.filter(i=>(!q||String(i.name).toLowerCase().includes(q))&&(!f||(f==="retenter"?i.retry:i.react===f)))
+  .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ $("list").innerHTML=rows.length?rows.map(i=>`<li class="r-${i.react}">
+<div class="top"><span class="name">${esc(i.name)}</span><span class="date">${fmt(i.date)}</span></div>
+<div class="tags"><span class="tag">${esc(i.form)}</span><span class="tag ${i.react==="aucune"?"":i.react==="legere"?"w":"b"}">${R[i.react]||""}</span><span class="tag ${i.like==="aime"?"":i.like==="moyen"?"w":"b"}">${L[i.like]||""}</span>${i.retry?'<span class="tag w">À retenter</span>':""}</div>
+${i.note?`<p class="note">${esc(i.note)}</p>`:""}
+<div class="act"><button data-a="retry" data-id="${i.id}">${i.retry?"Ne plus retenter":"À retenter"}</button><button data-a="edit" data-id="${i.id}">Modifier</button><button data-a="del" data-id="${i.id}">Supprimer</button></div></li>`).join("")
+ :`<li class="empty">${items.length?"Aucun aliment ne correspond.":"Aucun aliment pour l’instant. Ajoute le premier ci-dessus."}</li>`;
+ renderPlan();
+}
+$("f").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const o={name:$("name").value.trim(),date:$("date").value,form:$("form").value,react:$("react").value,like:$("like").value,note:$("note").value.trim()};
+ if(!o.name)return;
+ try{
+  if(editId){await upd(editId,o);editId=null;$("submit").textContent="Ajouter l’aliment"}
+  else await add({...o,retry:false});
+  $("f").reset();$("date").valueAsDate=new Date();
+ }catch(err){$("sync").textContent="Enregistrement impossible : vérifie la connexion et les règles Firestore."}
+});
+$("list").addEventListener("click",async e=>{
+ const b=e.target.closest("button");if(!b)return;
+ const i=items.find(x=>x.id===b.dataset.id);if(!i)return;
+ try{
+  if(b.dataset.a==="del"){if(confirm("Supprimer « "+i.name+" » ?"))await del(i.id)}
+  else if(b.dataset.a==="retry")await upd(i.id,{retry:!i.retry});
+  else{editId=i.id;$("name").value=i.name;$("date").value=i.date;$("form").value=i.form;$("react").value=i.react;$("like").value=i.like;$("note").value=i.note||"";$("submit").textContent="Enregistrer les changements";window.scrollTo({top:0,behavior:"smooth"})}
+ }catch(err){$("sync").textContent="Modification impossible : vérifie la connexion et les règles Firestore."}
+});
+$("shareLink").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(location.href);$("shareLink").textContent="Lien copié ✓"}catch(e){prompt("Copie ce lien et envoie-le à l’autre personne :",location.href)}});
+$("q").addEventListener("input",render);$("flt").addEventListener("change",render);
+$("imp").addEventListener("click",async()=>{
+ if(!col)return;$("imp").disabled=true;
+ try{for(const it of localItems){const {id,...d}=it;await col.add(d)}localItems=[];try{localStorage.removeItem(KEY)}catch(e){}$("imp").hidden=true}
+ catch(err){$("imp").disabled=false;$("sync").textContent="Import impossible."}
+});
+
+let birth="",dbRef=null;
+const PLAN=[
+{t:"Légumes",m:[4, 6],n:"Cuits et mixés lisses. Tous les légumes sont possibles.",f:["Carotte", "Courgette", "Haricot vert", "Haricot beurre", "Potiron", "Potimarron", "Courge butternut", "Pâtisson", "Citrouille", "Brocoli", "Chou-fleur", "Chou vert", "Chou rouge", "Chou de Bruxelles", "Chou rave", "Épinard", "Blette", "Poireau", "Petit pois", "Fève", "Patate douce", "Pomme de terre", "Betterave", "Fenouil", "Aubergine", "Poivron", "Tomate (cuite, sans peau)", "Concombre", "Navet", "Panais", "Rutabaga", "Céleri-rave", "Céleri branche", "Salsifis", "Topinambour", "Radis", "Endive", "Laitue", "Mâche", "Roquette", "Cresson", "Asperge", "Artichaut", "Maïs doux", "Champignon de Paris", "Oignon", "Échalote", "Ail"]},
+{t:"Fruits",m:[4, 6],n:"Compote lisse ou fruit cru très mûr écrasé. Sans peau, sans noyau ni pépins.",f:["Pomme", "Poire", "Banane", "Pêche", "Nectarine", "Abricot", "Prune", "Mirabelle", "Cerise", "Fraise", "Framboise", "Myrtille", "Mûre", "Cassis", "Groseille", "Raisin (écrasé)", "Melon", "Pastèque", "Mangue", "Papaye", "Ananas", "Kiwi", "Orange", "Clémentine", "Mandarine", "Pamplemousse", "Citron", "Litchi", "Figue", "Datte (écrasée)", "Pruneau (cuit)", "Grenade", "Rhubarbe (cuite)", "Avocat", "Coing (cuit)", "Kaki"]},
+{t:"Féculents et céréales",m:[4, 6],n:"Gluten possible dès le début, de façon progressive (souvent proposé avec les farines 2e âge vers le 7e mois). Produits complets possibles selon la digestion.",f:["Riz", "Pâtes", "Semoule", "Boulgour", "Quinoa", "Millet", "Sarrasin", "Orge", "Épeautre", "Blé", "Polenta (maïs)", "Tapioca", "Flocons d’avoine", "Flocons de millet", "Farine infantile sans gluten", "Farine infantile avec gluten", "Vermicelles", "Gnocchi", "Manioc", "Igname", "Banane plantain", "Pain", "Pain complet", "Biscotte", "Galette de riz"]},
+{t:"Légumes secs",m:[4, 6],n:"Possible selon la tolérance digestive, mixés et en petite quantité (d’anciens documents conseillent d’attendre 1 an : demande l’avis du pédiatre).",f:["Lentilles vertes", "Lentilles corail", "Pois chiches", "Pois cassés", "Haricots rouges", "Haricots blancs", "Flageolets", "Haricots noirs", "Fèves sèches", "Tofu", "Pois mange-tout"]},
+{t:"Viande, poisson, œuf",m:[4, 6],n:"Possibles dès 4-6 mois, mais pas indispensables avant 6 mois. Toujours bien cuits, mixés. Environ 10 g par jour de viande ou poisson, un quart d’œuf par semaine. Poissons : sans arêtes ; varier et limiter les grands prédateurs (espadon, requin…).",f:["Poulet", "Dinde", "Canard", "Lapin", "Veau", "Bœuf", "Agneau", "Porc", "Cabillaud", "Colin", "Merlu", "Lieu", "Églefin", "Sole", "Dorade", "Bar", "Truite", "Saumon", "Sardine", "Maquereau", "Thon", "Œuf (bien cuit)", "Jaune d’œuf", "Blanc d’œuf"]},
+{t:"Fruits de mer",m:[4, 6],n:"Uniquement bien cuits (jamais crus avant 3 ans). Fait partie des allergènes à ne pas retarder.",f:["Crevette (cuite)", "Moule (cuite)", "Saint-Jacques (cuite)", "Calmar (cuit)", "Crabe (cuit)"]},
+{t:"Produits laitiers",m:[4, 6],n:"Au lait entier et pasteurisés, en complément du lait infantile ou maternel (qu’ils ne remplacent pas).",f:["Yaourt nature", "Fromage blanc", "Petit-suisse", "Fromage frais", "Mozzarella (pasteurisée)", "Ricotta", "Emmental", "Comté", "Gouda", "Fromage fondu", "Crème fraîche"]},
+{t:"Fruits à coque et graines",m:[4, 6],n:"Réputés allergènes : à introduire dès le début en poudre ou purée lisse, jamais entiers.",f:["Arachide (purée lisse)", "Amande (poudre)", "Noisette (poudre)", "Noix (poudre)", "Noix de cajou (purée)", "Pistache (poudre)", "Noix de pécan (poudre)", "Noix de coco (râpée)", "Sésame (purée)", "Tournesol (graines moulues)", "Lin (graines moulues)", "Chia (graines)", "Courge (graines moulues)"]},
+{t:"Autres allergènes courants",m:[4, 6],n:"Aussi à ne pas retarder, en toute petite quantité au début.",f:["Soja", "Céleri", "Moutarde (une pointe)", "Lupin (farine)"]},
+{t:"Herbes, aromates et épices",m:[4, 6],n:"Pour éveiller le goût sans sel ni sucre. Épices douces seulement, jamais piquantes.",f:["Persil", "Ciboulette", "Basilic", "Coriandre", "Aneth", "Menthe", "Thym", "Romarin", "Laurier", "Origan", "Cannelle", "Curcuma", "Cumin", "Paprika doux", "Gingembre", "Vanille"]},
+{t:"Matières grasses",m:[4, 6],n:"À ajouter systématiquement aux préparations maison, en alternant.",f:["Huile de colza", "Huile d’olive", "Huile de noix", "Beurre", "Crème fraîche"]},
+{t:"Boissons",m:[4, 6],n:"L’eau est la seule boisson nécessaire en plus du lait maternel ou infantile.",f:["Eau"]},
+{t:"Lait de vache",m:[12, null],n:"À partir de 1 an, alternance possible entre lait de croissance et lait de vache entier UHT.",f:["Lait de croissance", "Lait de vache entier UHT"]}
+];
+const AVOID=["Miel : pas avant 1 an (botulisme infantile).","Lait de vache comme boisson, charcuterie, sel ajouté, sucre, jus de fruits : pas avant 1 an.","Lait cru et fromages au lait cru : pas avant 5 ans.","Viande, poisson, coquillages et œufs crus ou peu cuits : pas avant 3 ans.","Boissons végétales (soja, riz, amande…) à la place du lait : pas avant 1 an. Eaux sucrées, sodas, sirops : à éviter.","Fruits à coque entiers, raisin entier, cacahuètes entières, morceaux durs ou ronds : risque d’étouffement, à écraser ou couper."];
+function addM(d,m){const x=new Date(d+"T12:00");x.setMonth(x.getMonth()+m);return x}
+function fd(x){return x.toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}
+function norm(s){return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s*\(.*\)/,"").trim()}
+let planEdit=false,custom={},hidden=[];
+function savePlan(){const j=JSON.stringify({custom,hidden});try{if(dbRef)dbRef.doc("meta/plan").set({json:j});else localStorage.setItem("diversification:plan",j)}catch(e){}}
+function loadPlanJson(j){try{const o=JSON.parse(j);custom=o.custom||{};hidden=o.hidden||[]}catch(e){}}
+try{loadPlanJson(localStorage.getItem("diversification:plan")||"{}")}catch(e){}
+function renderPlan(){
+ const have=new Set(items.map(i=>norm(i.name)));
+ const win=m=>{const a=m[0]+" mois"+(m[1]?" à "+m[1]+" mois":" et plus");
+  if(!birth)return "Âge recommandé : "+a;
+  return "Âge recommandé : "+a+(m[1]?". À partir du "+fd(addM(birth,m[0]))+", idéalement avant le "+fd(addM(birth,m[1])):". À partir du "+fd(addM(birth,m[0])))};
+ $("planBody").innerHTML=PLAN.map((g,gi)=>{
+  const foods=g.f.filter(x=>!hidden.includes(g.t+"|"+x)).concat(custom[g.t]||[]);
+  return `<h3>${g.t}</h3><p class="when">${win(g.m)}. ${g.n}</p><div class="chips">${foods.map(x=>{const d=have.has(norm(x));return `<button type="button" class="chip${d?" done":""}${planEdit?" edit":""}" data-food="${esc(x)}" data-g="${gi}">${d&&!planEdit?"✓ ":""}${esc(x)}${planEdit?" ×":""}</button>`}).join("")}</div>${planEdit?`<div class="addrow"><input data-add="${gi}" placeholder="Ajouter à « ${g.t} »" aria-label="Ajouter un aliment à ${g.t}"><button type="button" data-addbtn="${gi}">Ajouter</button></div>`:""}`}).join("")
+ +`<h3>Textures</h3><p class="when">Lisse dès le début, puis écrasé et petits morceaux mous environ 2 mois après le début de la diversification (vers 6-8 mois).</p><h3>À éviter</h3><ul class="avoid">${AVOID.map(a=>`<li>${a}</li>`).join("")}</ul>`
+ +(planEdit?`<p style="margin-top:14px"><button type="button" id="resetPlan">Rétablir les listes d’origine</button></p>`:"");
+ $("editPlan").textContent=planEdit?"Terminer la modification":"Modifier les listes";
+}
+$("editPlan").addEventListener("click",()=>{planEdit=!planEdit;renderPlan()});
+$("planBody").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.add!==undefined){e.preventDefault();const b=document.querySelector('[data-addbtn="'+e.target.dataset.add+'"]');if(b)b.click()}});
+$("planBody").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.addbtn!==undefined){const gi=+b.dataset.addbtn,v=document.querySelector('[data-add="'+gi+'"]').value.trim(),t=PLAN[gi].t;if(!v)return;custom[t]=custom[t]||[];if(!custom[t].includes(v))custom[t].push(v);hidden=hidden.filter(k=>k!==t+"|"+v);savePlan();renderPlan();return}
+ if(b.id==="resetPlan"){if(confirm("Rétablir les listes d’origine ?")){custom={};hidden=[];savePlan();renderPlan()}return}
+ if(b.dataset.food===undefined)return;
+ const x=b.dataset.food,t=PLAN[+b.dataset.g].t;
+ if(planEdit){if((custom[t]||[]).includes(x))custom[t]=custom[t].filter(y=>y!==x);else hidden.push(t+"|"+x);savePlan();renderPlan();return}
+ $("name").value=x.replace(/\s*\(.*\)/,"");$("date").valueAsDate=new Date();$("f").scrollIntoView({behavior:"smooth"});$("name").focus();
+});
+$("birth").addEventListener("change",()=>{birth=$("birth").value;try{if(dbRef)dbRef.doc("meta/bebe").set({naissance:birth});else localStorage.setItem("diversification:birth",birth)}catch(e){}renderPlan()});
+try{birth=localStorage.getItem("diversification:birth")||"";$("birth").value=birth}catch(e){}
+items=loadLocal();localItems=items.slice();
+$("sync").textContent="Mode local : les données restent sur cet appareil.";
+render();
+(async()=>{
+ try{
+  if(!window.claude)return;
+  const db=await claude.use("db");if(!db)return;
+  col=db.collection("foods");dbRef=db;
+  if(/c=/.test(location.hash))$("shareLink").hidden=false;
+  db.doc("meta/plan").onSnapshot(s=>{if(s.exists){loadPlanJson((s.data()||{}).json||"{}");renderPlan()}},()=>{});
+  db.doc("meta/bebe").onSnapshot(s=>{if(s.exists){birth=(s.data()||{}).naissance||"";$("birth").value=birth;renderPlan()}},()=>{});
+  col.onSnapshot(s=>{
+   items=s.docs.map(d=>({id:d.id,...d.data()}));
+   $("sync").textContent="Synchronisé : les changements apparaissent sur tous les appareils qui ouvrent ce lien.";
+   if(localItems.length){$("imp").hidden=false;$("imp").textContent="Importer "+localItems.length+" aliment"+(localItems.length>1?"s":"")+" de cet appareil"}
+   render();
+  },()=>{col=null;items=loadLocal();$("sync").textContent="Synchronisation indisponible : mode local.";render()});
+ }catch(e){}
+})();
+</script>
+</body>
+</html>
